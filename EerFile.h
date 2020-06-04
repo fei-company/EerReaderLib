@@ -1,0 +1,40 @@
+// Copyright (c) 2019 by FEI Company
+// All rights reserved. This file includes confidential and proprietary information of FEI Company.
+
+#pragma once
+
+#include <memory>
+#include <string>
+#include <tiffio.h>
+#include "EerFrame.h"
+#include "Bitmap.h"
+
+namespace Fei {
+namespace Acquisition {
+namespace EerReader {
+
+class EerFile
+{
+public:
+    EerFile(const std::string& filename);
+    ~EerFile();
+
+    std::unique_ptr<EerFrame> GetNextEerFrame();
+    std::shared_ptr<Bitmap> GetFinalImage();
+    std::string GetAcquisitionMetadata() const;
+    std::string GetFinalImageMetadata() const;
+
+private:
+    bool IsCurrentFrameEERCompressed();
+
+private:
+    std::shared_ptr<TIFF> m_tiff;
+    bool m_nextFrameAvailable = true;
+    std::shared_ptr<Bitmap> m_finalImageBitmap;
+    std::string m_acquisitionMetadata;
+    std::string m_finalImageMetadata;
+};
+
+} //namespace EerReader
+} //namespace Acquisition
+} //namespace Fei
