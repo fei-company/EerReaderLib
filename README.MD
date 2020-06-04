@@ -1,27 +1,68 @@
 Version History
 ===============
 
-  ------------------------------------------------------------------------------
-  **Version**   **Date**      **Changes**                   **Author(s)**
-  ------------- ------------- ----------------------------- --------------------
-  1.0           30 Aug 2019   Initial version               P. Bootsma
-
-  2.0           02 Dec 2019   Added 7-bit compression       A. Dumitrescu
-
-  2.1           10 Dec 2019   Added Final image directory   M. Balasubramanian
-
-  2.2           17 Jan 2020   Added acquisition metadata    A. Dumitrescu,
-                                                            
-                                                            P. Bootsma
-  ------------------------------------------------------------------------------
+<table>
+<thead>
+<tr class="header">
+<th><strong>Version</strong></th>
+<th><strong>Date</strong></th>
+<th><strong>Changes</strong></th>
+<th><strong>Author(s)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1.0</td>
+<td>30 Aug 2019</td>
+<td>Initial version</td>
+<td>P. Bootsma</td>
+</tr>
+<tr class="even">
+<td>2.0</td>
+<td>02 Dec 2019</td>
+<td>Added 7-bit compression</td>
+<td>A. Dumitrescu</td>
+</tr>
+<tr class="odd">
+<td>2.1</td>
+<td>10 Dec 2019</td>
+<td>Added Final image directory</td>
+<td>M. Balasubramanian</td>
+</tr>
+<tr class="even">
+<td>2.2</td>
+<td>17 Jan 2020</td>
+<td>Added acquisition metadata</td>
+<td><p>A. Dumitrescu,</p>
+<p>P. Bootsma</p></td>
+</tr>
+</tbody>
+</table>
 
 References
 ==========
 
-  **No**        **Title**                 **Author(s)**
-  ------------- ------------------------- --------------------
-  \[TIFF\]      TIFF Revision 6.0         Adobe Systems Inc.
-  \[BIGTIFF\]   The BigTIFF File Format   Aware Systems
+<table>
+<thead>
+<tr class="header">
+<th><strong>No</strong></th>
+<th><strong>Title</strong></th>
+<th><strong>Author(s)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>[TIFF]</td>
+<td>TIFF Revision 6.0</td>
+<td>Adobe Systems Inc.</td>
+</tr>
+<tr class="even">
+<td>[BIGTIFF]</td>
+<td>The BigTIFF File Format</td>
+<td>Aware Systems</td>
+</tr>
+</tbody>
+</table>
 
 Introduction
 ============
@@ -82,9 +123,20 @@ The EER file format adds one compression scheme to BigTIFF. This value
 is used in the compression field (tag 259) to indicate that an IFD
 contains EER compressed data.
 
-  **Value**   **Comment**
-  ----------- ---------------------
-  65000       EER compressed data
+<table>
+<thead>
+<tr class="header">
+<th><strong>Value</strong></th>
+<th><strong>Comment</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>65000</td>
+<td>EER compressed data</td>
+</tr>
+</tbody>
+</table>
 
 Fields
 ------
@@ -92,9 +144,24 @@ Fields
 The EER file format adds several fields to BigTIFF. These fields can be
 present in IFDs as indicated later in this document.
 
-  **Field**              **Tag**   **Type**    **Comment**
-  ---------------------- --------- ----------- -------------------------------------------------------------------------------------
-  Acquisition Metadata   65001     UNDEFINED   A non-zero-terminated string containing metadata concerning the entire acquisition.
+<table>
+<thead>
+<tr class="header">
+<th><strong>Field</strong></th>
+<th><strong>Tag</strong></th>
+<th><strong>Type</strong></th>
+<th><strong>Comment</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Acquisition Metadata</td>
+<td>65001</td>
+<td>UNDEFINED</td>
+<td>A non-zero-terminated string containing metadata concerning the entire acquisition.</td>
+</tr>
+</tbody>
+</table>
 
 Image File Directories
 ======================
@@ -108,10 +175,33 @@ EER Frames
 An IFD containing an EER frame is identified by the compression scheme
 of the image data:
 
-  **Field**     **Tag**   **Type**   **Value**   **Comment**
-  ------------- --------- ---------- ----------- ---------------------------
-  Compression   259       SHORT      65000       EER compressed data 8-bit
-  Compression   259       SHORT      65001       EER compressed data 7-bit
+<table>
+<thead>
+<tr class="header">
+<th><strong>Field</strong></th>
+<th><strong>Tag</strong></th>
+<th><strong>Type</strong></th>
+<th><strong>Value</strong></th>
+<th><strong>Comment</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Compression</td>
+<td>259</td>
+<td>SHORT</td>
+<td>65000</td>
+<td>EER compressed data 8-bit</td>
+</tr>
+<tr class="even">
+<td>Compression</td>
+<td>259</td>
+<td>SHORT</td>
+<td>65001</td>
+<td>EER compressed data 7-bit</td>
+</tr>
+</tbody>
+</table>
 
 EER compressed data is stored like a bilevel image in a regular TIFF. It
 is stored in one or more strips. If multiple strips are used, the entire
@@ -123,14 +213,54 @@ or unexpected fields must be ignored.
 
 ### Required fields
 
-  **Field**           **Tag**   **Type**               **Comment**
-  ------------------- --------- ---------------------- ------------------------------------------------------------------------------------------------
-  Image Width         256       SHORT or LONG          The number of columns in the frame
-  Image Length        257       SHORT or LONG          The number of rows in the frame
-  Compression         259       SHORT                  The compression scheme used; 65000/1 for EER data
-  Rows Per Strip      278       SHORT or LONG          The number of rows in each strip (except possibly the last strip, which can contain less rows)
-  Strip Offsets       273       SHORT, LONG or LONG8   For each strip, the byte offset of that strip
-  Strip Byte Counts   279       SHORT, LONG or LONG8   For each strip, the number of bytes in that strip
+<table>
+<thead>
+<tr class="header">
+<th><strong>Field</strong></th>
+<th><strong>Tag</strong></th>
+<th><strong>Type</strong></th>
+<th><strong>Comment</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Image Width</td>
+<td>256</td>
+<td>SHORT or LONG</td>
+<td>The number of columns in the frame</td>
+</tr>
+<tr class="even">
+<td>Image Length</td>
+<td>257</td>
+<td>SHORT or LONG</td>
+<td>The number of rows in the frame</td>
+</tr>
+<tr class="odd">
+<td>Compression</td>
+<td>259</td>
+<td>SHORT</td>
+<td>The compression scheme used; 65000/1 for EER data</td>
+</tr>
+<tr class="even">
+<td>Rows Per Strip</td>
+<td>278</td>
+<td>SHORT or LONG</td>
+<td>The number of rows in each strip (except possibly the last strip, which can contain less rows)</td>
+</tr>
+<tr class="odd">
+<td>Strip Offsets</td>
+<td>273</td>
+<td>SHORT, LONG or LONG8</td>
+<td>For each strip, the byte offset of that strip</td>
+</tr>
+<tr class="even">
+<td>Strip Byte Counts</td>
+<td>279</td>
+<td>SHORT, LONG or LONG8</td>
+<td>For each strip, the number of bytes in that strip</td>
+</tr>
+</tbody>
+</table>
 
 ### Optional fields
 
@@ -149,15 +279,60 @@ supports EER frames and one optional final image frame.
 
 ### Required fields
 
-  **Field**           **Tag**   **Type**               **Comment**
-  ------------------- --------- ---------------------- ------------------------------------------------------------------------------------------------
-  Image Width         256       SHORT or LONG          The number of columns in the frame
-  Image Length        257       SHORT or LONG          The number of rows in the frame
-  Compression         259       SHORT                  The compression scheme used; COMPRESSION\_NONE (1) for final image data
-  Bits per sample     258       SHORT                  The number of bits per channel. For final image data, it is 16 bits per sample (2 bytes)
-  Rows Per Strip      278       SHORT or LONG          The number of rows in each strip (except possibly the last strip, which can contain less rows)
-  Strip Offsets       273       SHORT, LONG or LONG8   For each strip, the byte offset of that strip
-  Strip Byte Counts   279       SHORT, LONG or LONG8   For each strip, the number of bytes in that strip
+<table>
+<thead>
+<tr class="header">
+<th><strong>Field</strong></th>
+<th><strong>Tag</strong></th>
+<th><strong>Type</strong></th>
+<th><strong>Comment</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Image Width</td>
+<td>256</td>
+<td>SHORT or LONG</td>
+<td>The number of columns in the frame</td>
+</tr>
+<tr class="even">
+<td>Image Length</td>
+<td>257</td>
+<td>SHORT or LONG</td>
+<td>The number of rows in the frame</td>
+</tr>
+<tr class="odd">
+<td>Compression</td>
+<td>259</td>
+<td>SHORT</td>
+<td>The compression scheme used; COMPRESSION_NONE (1) for final image data</td>
+</tr>
+<tr class="even">
+<td>Bits per sample</td>
+<td>258</td>
+<td>SHORT</td>
+<td>The number of bits per channel. For final image data, it is 16 bits per sample (2 bytes)</td>
+</tr>
+<tr class="odd">
+<td>Rows Per Strip</td>
+<td>278</td>
+<td>SHORT or LONG</td>
+<td>The number of rows in each strip (except possibly the last strip, which can contain less rows)</td>
+</tr>
+<tr class="even">
+<td>Strip Offsets</td>
+<td>273</td>
+<td>SHORT, LONG or LONG8</td>
+<td>For each strip, the byte offset of that strip</td>
+</tr>
+<tr class="odd">
+<td>Strip Byte Counts</td>
+<td>279</td>
+<td>SHORT, LONG or LONG8</td>
+<td>For each strip, the number of bytes in that strip</td>
+</tr>
+</tbody>
+</table>
 
 Metadata
 ========
@@ -166,23 +341,56 @@ In the first IFD metadata is written that applies to the entire
 acquisition. The metadata is written as a tag with ID 65001. This tag
 contains an XML string structured as follows:
 
-&lt;metadata&gt;\
-&lt;item name=”\[name\]” unit=”\[unit\]”&gt;\[value\]&lt;/item&gt;\
-&lt;item name=”\[name2\]”&gt;\[value2\]&lt;/item&gt;\
-…\
+&lt;metadata&gt;  
+&lt;item name=”\[name\]” unit=”\[unit\]”&gt;\[value\]&lt;/item&gt;  
+&lt;item name=”\[name2\]”&gt;\[value2\]&lt;/item&gt;  
+…  
 &lt;/metadata&gt;
 
 The unit attribute may be omitted for values that do not have a unit.
 
 The values present in the field are the following:
 
-  **Name**            **Unit**    **Comments**
-  ------------------- ----------- -------------------------------------------------------------------------
-  numberOfFrames                  Total number of frames in the acquisition
-  exposureTime        s           Exposure time of the acquisition
-  totalDose           e/pixel     Average amount of electrons per pixel in the entire acquisition
-  meanDoseRate        e/pixel/s   Average amount of electrons per pixel per second during the acquisition
-  sensorImageWidth    pixels      Width of the individual images
-  sensorImageHeight   pixels      Height of the individual images
+<table>
+<thead>
+<tr class="header">
+<th><strong>Name</strong></th>
+<th><strong>Unit</strong></th>
+<th><strong>Comments</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>numberOfFrames</td>
+<td></td>
+<td>Total number of frames in the acquisition</td>
+</tr>
+<tr class="even">
+<td>exposureTime</td>
+<td>s</td>
+<td>Exposure time of the acquisition</td>
+</tr>
+<tr class="odd">
+<td>totalDose</td>
+<td>e/pixel</td>
+<td>Average amount of electrons per pixel in the entire acquisition</td>
+</tr>
+<tr class="even">
+<td>meanDoseRate</td>
+<td>e/pixel/s</td>
+<td>Average amount of electrons per pixel per second during the acquisition</td>
+</tr>
+<tr class="odd">
+<td>sensorImageWidth</td>
+<td>pixels</td>
+<td>Width of the individual images</td>
+</tr>
+<tr class="even">
+<td>sensorImageHeight</td>
+<td>pixels</td>
+<td>Height of the individual images</td>
+</tr>
+</tbody>
+</table>
 
 
