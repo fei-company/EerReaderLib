@@ -3,10 +3,12 @@
 
 #include "Bitmap.h"
 #include <string>
+#include <stdexcept>
 
 namespace Fei {
 namespace Acquisition {
 namespace EerReader {
+
 
 Bitmap::Bitmap(TIFF * tiff)
 {

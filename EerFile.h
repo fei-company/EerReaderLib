@@ -22,7 +22,6 @@ public:
     std::unique_ptr<EerFrame> GetNextEerFrame();
     std::shared_ptr<Bitmap> GetFinalImage();
     std::string GetAcquisitionMetadata() const;
-    std::string GetFinalImageMetadata() const;
 
 private:
     bool IsCurrentFrameEERCompressed();
@@ -31,8 +30,6 @@ private:
     std::shared_ptr<TIFF> m_tiff;
     bool m_nextFrameAvailable = true;
     std::shared_ptr<Bitmap> m_finalImageBitmap;
-    std::string m_acquisitionMetadata;
-    std::string m_finalImageMetadata;
 };
 
 } //namespace EerReader

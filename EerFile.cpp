@@ -3,8 +3,6 @@
 
 #include "EerFile.h"
 #include <iostream>
-#include <stdexcept>
-
 
 namespace Fei {
 namespace Acquisition {
@@ -16,8 +14,10 @@ namespace
     const uint16_t TIFF_COMPRESSION_EER_V1 = 65001;
 
     const uint16_t TIFFTAG_EER_ACQUISITION_METADATA = 65001;
-    const uint16_t TIFFTAG_EER_FINAL_IMAGE_PROCESSING_METADATA = 65005;
-    const uint16_t TIFFTAG_EER_FINAL_IMAGE_METADATA = 65006;
+    //const uint16_t TIFFTAG_EER_FINAL_IMAGE_METADATA = 65003;
+    //const uint16_t TIFFTAG_EER_FINAL_IMAGE_PROCESSING_METADATA = 65005;
+    //const uint16_t TIFFTAG_EER_FRAME_METADATA = 65002;
+    //const uint16_t TIFFTAG_EER_FRAME_PROCESSING_METADATA = 65004;
 
     void MyTIFFOutputError(const char* module, const char* fmt, va_list ap)
     {
@@ -27,11 +27,11 @@ namespace
     }
 
 
-    std::string GetFieldAsStringOrDefault(TIFF* tiff, ttag_t tag, const std::string& default)
+    std::string GetFieldAsString(TIFF* tiff, ttag_t tag)
     {
         char* data = nullptr;
         uint32_t count = 0;
-        if (TIFFGetField(tiff, tag, &count, &data) != 1) return default;
+        if (TIFFGetField(tiff, tag, &count, &data) != 1) throw std::runtime_error("GetField: Field with tag " + std::to_string(tag) + " is not present.");
         return std::string(data, count);
     }
 
@@ -40,8 +40,10 @@ namespace
         static const TIFFFieldInfo fieldInfo[] =
         {
             { TIFFTAG_EER_ACQUISITION_METADATA, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_UNDEFINED, FIELD_CUSTOM, true, true, "Acquisition metadata" },
-            { TIFFTAG_EER_FINAL_IMAGE_PROCESSING_METADATA, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_UNDEFINED, FIELD_CUSTOM, true, true, "Final image processing metadata" },
-            { TIFFTAG_EER_FINAL_IMAGE_METADATA, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_UNDEFINED, FIELD_CUSTOM, true, true, "Final image metadata" },
+            //{ TIFFTAG_EER_FINAL_IMAGE_METADATA, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_UNDEFINED, FIELD_CUSTOM, true, true, "Final image metadata" },
+            //{ TIFFTAG_EER_FINAL_IMAGE_PROCESSING_METADATA, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_UNDEFINED, FIELD_CUSTOM, true, true, "Final image processing metadata" },
+            //{ TIFFTAG_EER_FRAME_METADATA, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_UNDEFINED, FIELD_CUSTOM, true, true, "Frame metadata" },
+            //{ TIFFTAG_EER_FRAME_PROCESSING_METADATA, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_UNDEFINED, FIELD_CUSTOM, true, true, "Frame processing metadata" }
         };
 
      TIFFMergeFieldInfo(tif, fieldInfo, sizeof(fieldInfo) / sizeof(fieldInfo[0]));
@@ -66,9 +68,6 @@ EerFile::EerFile(const std::string & filename)
     {
         m_finalImageBitmap = nullptr;
     }
-
-    m_acquisitionMetadata = GetFieldAsStringOrDefault(m_tiff.get(), TIFFTAG_EER_ACQUISITION_METADATA, "");
-    m_finalImageMetadata = GetFieldAsStringOrDefault(m_tiff.get(), TIFFTAG_EER_FINAL_IMAGE_METADATA, "");
 }
 
 EerFile::~EerFile()
@@ -95,12 +94,7 @@ std::shared_ptr<Bitmap> EerFile::GetFinalImage()
 
 std::string EerFile::GetAcquisitionMetadata() const
 {
-    return m_acquisitionMetadata;
-}
-
-std::string EerFile::GetFinalImageMetadata() const
-{
-    return m_finalImageMetadata;
+    return GetFieldAsString(m_tiff.get(), TIFFTAG_EER_ACQUISITION_METADATA);
 }
 
 bool EerFile::IsCurrentFrameEERCompressed()
