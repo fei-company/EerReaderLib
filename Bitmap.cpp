@@ -1,5 +1,5 @@
 // Copyright (c) 2019 by FEI Company
-// All rights reserved. This file includes confidential and proprietary information of FEI Company.
+
 
 #include "Bitmap.h"
 #include <string>
