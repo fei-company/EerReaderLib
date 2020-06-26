@@ -1,4 +1,7 @@
 #!/software/EMAN2/bin/python2.7
+  
+# Copyright (c) 2019 by FEI Company
+
 from __future__ import print_function
 from __future__ import division
 
