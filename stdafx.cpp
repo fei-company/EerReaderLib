@@ -1,5 +1,4 @@
-// Copyright (c) 2019 by FEI Company
-// All rights reserved. This file includes confidential and proprietary information of FEI Company.
+// Copyright (c) 2019 by FEI Company\
 
 // stdafx.cpp : source file that includes just the standard includes
 // EerReaderLib.pch will be the pre-compiled header
