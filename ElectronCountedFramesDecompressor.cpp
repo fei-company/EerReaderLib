@@ -535,13 +535,3 @@ void ElectronCountedFramesDecompressor::createIndex()
     }
     std::cout << "ElectronCountedFramesDecompressor::createIndex: found "<<nFrames<<" frames; #OK = "<<nFramesOK<<", #Error = "<<nFramesErr << std::endl;
 }
-
-
-/*
- * Copyright (C) 2019 Thermo Fisher Scientific. Do not distribute.
- * This software is provided by Thermo Fisher Scientific to
- * - The Hospital for Sick Children, Toronto, Canada, under confidentiality conditions 
- *   described in the agreed “Equipment Evaluation Agreement” (signed November 2018),
- * - Structura Biotechnology Inc., Toronto, Canada, under confidentiality conditions 
- *   described in the agreed “Mutual Non-Disclosure Agreement” (signed February 2019).
- */
