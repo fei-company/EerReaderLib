@@ -49,6 +49,11 @@ void CreateDefectNeighborInfoMap(const CameraDefects& def, const float* gainImag
         defectNeighborInfo_t defLen = (defectNeighborInfo_t)(xStop - xStart);
         for (int y = 0; y<4096; ++y)
         { 
+            for (int xx=xStart; xx<=xStop;++xx)
+            {
+                int idx = (y)*4096 + xx;
+                _addDefectNeighborInfo(camDefectNeighborInfo, idx,  1); // 1 is used to mark a defect itself.
+            } 
             int ofs = y*4096;
             if (xStart>0)
             {
@@ -71,6 +76,11 @@ void CreateDefectNeighborInfoMap(const CameraDefects& def, const float* gainImag
         defectNeighborInfo_t defLen = (defectNeighborInfo_t)(yStop - yStart);
         for (int x = 0; x<4096; ++x)
         { 
+            for (int yy=yStart; yy<=yStop;++yy)
+            {
+                int idx = (yy)*4096 + x;
+                _addDefectNeighborInfo(camDefectNeighborInfo, idx,  1); // 1 is used to mark a defect itself.
+            } 
             if (yStart>0)
             {
                 int idx = (yStart-1)*4096 + x;
@@ -99,6 +109,7 @@ void CreateDefectNeighborInfoMap(const CameraDefects& def, const float* gainImag
         // std::cout << "X: "<< x << " - Y: " << y << std::endl;
 
         const defectNeighborInfo_t defLen = 0; //always for pixels. prep for areas.
+        _addDefectNeighborInfo(camDefectNeighborInfo,  y*4096 + x,  1);
         if (y > 0)
             _addDefectNeighborInfo(camDefectNeighborInfo,  (y-1)*4096 + x,  bitMask_Defect2DInterpol | bitMask_DefectDown  | defLen);
 
@@ -113,9 +124,13 @@ void CreateDefectNeighborInfoMap(const CameraDefects& def, const float* gainImag
 	}
 	for (auto it = def.areaDefects.begin(); it != def.areaDefects.end(); ++it)
 	{
-		defectNeighborInfo_t lx = (it->endX - it->beginX);
+    		defectNeighborInfo_t lx = (it->endX - it->beginX);
         defectNeighborInfo_t ly = (it->endY - it->beginY);
         
+        for (int yy=it->beginY; yy<=it->endY;++yy)
+            for (int xx=it->beginX; xx<=it->endX;++xx)
+                _addDefectNeighborInfo(camDefectNeighborInfo,  yy*4096 + xx,  1);
+
         if ((it->beginY) > 0)
         {
             int y = it->beginY-1;
@@ -164,8 +179,17 @@ unsigned DefectElectronAdder::execute(ElectronPos* pListPtr, unsigned nElect, co
         uint32_t eOfs = ((pListPtr[i].y >> nSubPixBits) << 12) | (pListPtr[i].x >> nSubPixBits);
         uint32_t eOfsGain = ((pListPtr[i].y / gainImageSizeFactor) * gainImageSize) | (pListPtr[i].x /gainImageSizeFactor);
         defectNeighborInfo_t di = camDefectNeighborInfo.neighborSpec[eOfs];
+        if (di==1)
+        {
+           // electron at defect!! make it harmless
+           pListPtr[i].x = 0xffff;
+           pListPtr[i].y = 0xffff;
+        }
         if (di & bitMask_DefectNeighborTypeMask)
         {
+            uint16_t subPix = distSubPix(generator);
+            pListPtr[i].x = (pListPtr[i].x & 0xfffc) | (subPix&3);
+            pListPtr[i].y = (pListPtr[i].y & 0xfffc) | (subPix>>2);            
             float pcGain = camDefectNeighborInfo.gainImage[eOfsGain];
             //std::cout<<"pcGain"<<pcGain<<std::endl;
             defectNeighborInfo_t defDist = (di & bitMask_Distance)+1;
@@ -176,7 +200,7 @@ unsigned DefectElectronAdder::execute(ElectronPos* pListPtr, unsigned nElect, co
             {
                 defectCounts[eOfs + k*defOfs] += pcGain * ((float)((defDist-k+1)))/(mult*(defDist+1)); // unordered_map creates zero-initialized element on-the-fly if not there yet. so convenient, yet confusing
             }
-            if ((di & bitMask_DefectNeighborTypeMask) == bitMask_DefectCorner)
+            if ((di & bitMask_DefectNeighborTypeMask) == bitMask_DefectCorner && eOfs >= defOfs && eOfs < 4096*4096+defOfs)
             {
                 defectNeighborInfo_t diOrt = camDefectNeighborInfo.neighborSpec[eOfs - defOfs];
                 // get the info of the horizontal defect. (by construction in CreateDefectNeighborInfoImage, the corner points now have the vertical one)
@@ -223,7 +247,7 @@ SubpixelPositionRandomizer::SubpixelPositionRandomizer() :
     generator = std::default_random_engine(rd()); // for replacing hot-pixel value
 }
 
-unsigned SubpixelPositionRandomizer::execute(ElectronPos* pListPtr, unsigned nElect)
+void SubpixelPositionRandomizer::execute(ElectronPos* pListPtr, unsigned nElect)
 {
     for (unsigned i=0; i<nElect;++i)
     {
