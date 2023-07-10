@@ -1,0 +1,7 @@
+**.vcxproj*
+**.sln
+*.db*
+build/**
+.vs/**
+Debug/**
+Release/**
