@@ -11,6 +11,7 @@ namespace
 {
     const uint16_t TIFF_COMPRESSION_EER_V0 = 65000;
     const uint16_t TIFF_COMPRESSION_EER_V1 = 65001;
+    const uint16_t TIFF_COMPRESSION_EER_V2 = 65002;
 
     const uint16_t TIFFTAG_EER_ACQUISITION_METADATA = 65001;
     //const uint16_t TIFFTAG_EER_FINAL_IMAGE_METADATA = 65003;
@@ -100,7 +101,7 @@ bool EerFile::IsCurrentFrameEERCompressed()
 {
     uint16_t compression;
     TIFFGetField(m_tiff.get(), TIFFTAG_COMPRESSION, &compression);
-    return compression == TIFF_COMPRESSION_EER_V0 || compression == TIFF_COMPRESSION_EER_V1;
+    return compression == TIFF_COMPRESSION_EER_V0 || compression == TIFF_COMPRESSION_EER_V1 || compression == TIFF_COMPRESSION_EER_V2;
 }
 
 } //namespace EerReader
