@@ -21,8 +21,15 @@ const defectNeighborInfo_t bitMask_DefectUp = bitMask_DefectBack | bitMask_Defec
 const defectNeighborInfo_t bitMask_Distance = 0x0F;
 
 
+const unsigned nSubPixBits = 2;
 
-const unsigned gainImageSizeFactor = totalSuperResolutionImSize/gainImageSize; // constant now since it is hard coded in the FPGA compressor anyway
+const unsigned cameraSize = 4096; // NOTE: ONLY SQUARE NOW! and only FACLON
+const unsigned superResolutionFactor = (1 << nSubPixBits); // constant now since it is hard coded in the FPGA compressor anyway
+
+const unsigned totalSuperResolutionImSize = superResolutionFactor * cameraSize;
+
+const unsigned gainImageSize = 4096;
+const unsigned gainImageSizeFactor = totalSuperResolutionImSize / gainImageSize; // constant now since it is hard coded in the FPGA compressor anyway
 
 
 
