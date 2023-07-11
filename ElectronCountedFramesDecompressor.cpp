@@ -62,12 +62,12 @@ template<int upBits>
 struct electronSetterDelta
 {
     static const unsigned widthIn = 4096;
-    static const unsigned widthOut = (widthIn << nSubPixBits) >> (nSubPixBits-upBits);
+    static const unsigned widthOut = (widthIn << g_nSubPixBits) >> (g_nSubPixBits-upBits);
     
     inline static void apply(uint8_t* p, unsigned posX, unsigned posY, unsigned subPixX, unsigned subPixY)
     {
-        unsigned posXS = ((posX << nSubPixBits) + (subPixX^2)) >> ((int)nSubPixBits-upBits);
-        unsigned posYS = ((posY << nSubPixBits) + (subPixY^2)) >> ((int)nSubPixBits-upBits); 
+        unsigned posXS = ((posX << g_nSubPixBits) + (subPixX^2)) >> ((int)g_nSubPixBits-upBits);
+        unsigned posYS = ((posY << g_nSubPixBits) + (subPixY^2)) >> ((int)g_nSubPixBits-upBits); 
 #ifdef SUBPIXHIST
         TSThist[(subPixX^2)+(subPixY^2)*4] ++;
 #endif
@@ -81,12 +81,12 @@ template<int upBits>
 struct electronAdderDelta
 {
     static const unsigned widthIn = 4096;
-    static const unsigned widthOut = (widthIn << nSubPixBits) >> (nSubPixBits-upBits);
+    static const unsigned widthOut = (widthIn << g_nSubPixBits) >> (g_nSubPixBits-upBits);
 
     inline static void apply(uint8_t* p, unsigned posX, unsigned posY, unsigned subPixX, unsigned subPixY)
     {
-        unsigned posXS = ((posX << nSubPixBits) + (subPixX^2)) >> ((int)nSubPixBits-upBits);
-        unsigned posYS = ((posY << nSubPixBits) + (subPixY^2)) >> ((int)nSubPixBits-upBits); 
+        unsigned posXS = ((posX << g_nSubPixBits) + (subPixX^2)) >> ((int)g_nSubPixBits-upBits);
+        unsigned posYS = ((posY << g_nSubPixBits) + (subPixY^2)) >> ((int)g_nSubPixBits-upBits); 
 #ifdef SUBPIXHIST
         TSThist[(subPixX^2)+(subPixY^2)*4] ++;
 #endif
@@ -137,8 +137,8 @@ struct electronAdderBSpline
     
     inline static void apply(float* p, int posX, int posY, int subX, int subY)
     {
-        int posXS = ((posX - ((subX>>1)&1)) << upBits) + (subX >> (nSubPixBits-upBits));
-        int posYS = ((posY - ((subY>>1)&1)) << upBits) + (subY >> (nSubPixBits-upBits)); 
+        int posXS = ((posX - ((subX>>1)&1)) << upBits) + (subX >> (g_nSubPixBits-upBits));
+        int posYS = ((posY - ((subY>>1)&1)) << upBits) + (subY >> (g_nSubPixBits-upBits)); 
         
         subX = (subX << upBits) & 3; //repl MASK
         subY = (subY << upBits) & 3; //repl MASK
@@ -167,13 +167,13 @@ struct electronAdderBSpline
 template<class operationFunc, typename ImType>
 unsigned doDecompressImage(BitStreamer& myBitStreamer, ImType* p, unsigned w, unsigned h)
 {
-    static const int maxVal = ((1<<nBitsRLE)-1);
+    static const int maxVal = ((1<<g_nBitsRLE)-1);
 	//std::cout<<"TST"<<(superPosFunc::upBitsVal)<<", "<<w<<", "<<h<<std::endl;
     //std::cerr<<"superfactorr"<<operationFunc::widthOut<<std::endl;
 	
     int N = (int)(w*h);
 
-    int symbol = (int)myBitStreamer.getBits(nBitsPerCode);
+    int symbol = (int)myBitStreamer.getBits(g_nBitsPerCode);
     int value = symbol & maxVal;
     int outCount = value;
     unsigned nElect = 0;
@@ -181,16 +181,16 @@ unsigned doDecompressImage(BitStreamer& myBitStreamer, ImType* p, unsigned w, un
 	{
 		if (value < maxVal)
 		{
-            int subPix = symbol>>nBitsRLE;
+            int subPix = symbol>>g_nBitsRLE;
             operationFunc::apply(p, (outCount & 4095), (outCount >> 12), (subPix & 3), (subPix >> 2)); 
 			++outCount;
             ++nElect;
 		}
-        else if (no_bit_waste_on_overflow_code) //this is constant expression so I assume compiler eliminates the check
+        else if (g_no_bit_waste_on_overflow_code) //this is constant expression so I assume compiler eliminates the check
         {
-            myBitStreamer.rewind(2*nSubPixBits); // only for no-waste EER RLE implementation.
+            myBitStreamer.rewind(2*g_nSubPixBits); // only for no-waste EER RLE implementation.
         }
-		symbol = (int)myBitStreamer.getBits(nBitsPerCode);
+		symbol = (int)myBitStreamer.getBits(g_nBitsPerCode);
 		value = symbol & maxVal;
 		outCount += value;
 	}
@@ -218,19 +218,19 @@ unsigned doDecompressImage(BitStreamer& myBitStreamer, ImType* p, unsigned w, un
 
 
 ElectronCountedFramesDecompressor::ElectronCountedFramesDecompressor(const std::string& filename)
-	: nElectronsCounted(0)
+	: m_nElectronsCounted(0)
 {
-    tiffMode = (filename.substr(filename.length()-4)!=".ecc");
-    if (tiffMode)
+    m_tiffMode = (filename.substr(filename.length()-4)!=".ecc");
+    if (m_tiffMode)
     {
         std::cout<<"ElectronCountedFramesDecompressor: reading using TIFF-EER mode." << std::endl;
-        eerFile.reset(new Fei::Acquisition::EerReader::EerFile(filename));
+        m_eerFile.reset(new Fei::Acquisition::EerReader::EerFile(filename));
     }
     else
     {
         std::cout<<"ElectronCountedFramesDecompressor: reading using ECC mode." << std::endl;
-        fh.open(filename.c_str(), std::ios_base::in | std::ios::binary);
-        if (!fh.is_open())
+        m_fh.open(filename.c_str(), std::ios_base::in | std::ios::binary);
+        if (!m_fh.is_open())
         {
             printf("Error: input file cannot be opened!");
             return;
@@ -246,39 +246,39 @@ ElectronCountedFramesDecompressor::ElectronCountedFramesDecompressor(const std::
 
 void ElectronCountedFramesDecompressor::getSize(unsigned& x, unsigned& y, unsigned& z)
 {
-    x = nx;
-    y = ny;
-    z = nFrames;
+    x = m_nx;
+    y = m_ny;
+    z = m_nFrames;
 }
 
 unsigned ElectronCountedFramesDecompressor::getNFrames()
 {
-    return nFrames;
+    return m_nFrames;
 }
 
 void ElectronCountedFramesDecompressor::decompressImage(uint8_t* p, int superFactor, int frameNumber)
 {
     BitStreamer myBitStreamer = prepareFrameRead(frameNumber);
-    unsigned nxo = nx, nyo = ny;
+    unsigned nxo = m_nx, nyo = m_ny;
     if (superFactor > 0) { nxo *= superFactor; nyo *= superFactor; }
     if (superFactor < 0) { nxo /= (-superFactor); nyo /= (-superFactor); }
 	std::memset(p, 0, nxo*nyo*sizeof(uint8_t)); //optionally make it possible to skip this if you _know_ it is already OK.
     unsigned nElect = 0;
     switch(superFactor)
     {
-        case -32: nElect = doDecompressImage<electronSetterDelta<-5> >(myBitStreamer, p, nx, ny); break;
-        case -16: nElect = doDecompressImage<electronSetterDelta<-4> >(myBitStreamer, p, nx, ny); break;
-        case -8: nElect = doDecompressImage<electronSetterDelta<-3> >(myBitStreamer, p, nx, ny); break;
-        case -4: nElect = doDecompressImage<electronSetterDelta<-2> >(myBitStreamer, p, nx, ny); break;
-        case -2: nElect = doDecompressImage<electronSetterDelta<-1> >(myBitStreamer, p, nx, ny); break;
-        case 1: nElect = doDecompressImage<electronSetterDelta<0> >(myBitStreamer, p, nx, ny); break;
-        case 2: nElect = doDecompressImage<electronSetterDelta<1> >(myBitStreamer, p, nx, ny); break;
-        case 4: nElect = doDecompressImage<electronSetterDelta<2> >(myBitStreamer, p, nx, ny); break;
+        case -32: nElect = doDecompressImage<electronSetterDelta<-5> >(myBitStreamer, p, m_nx, m_ny); break;
+        case -16: nElect = doDecompressImage<electronSetterDelta<-4> >(myBitStreamer, p, m_nx, m_ny); break;
+        case -8: nElect = doDecompressImage<electronSetterDelta<-3> >(myBitStreamer, p, m_nx, m_ny); break;
+        case -4: nElect = doDecompressImage<electronSetterDelta<-2> >(myBitStreamer, p, m_nx, m_ny); break;
+        case -2: nElect = doDecompressImage<electronSetterDelta<-1> >(myBitStreamer, p, m_nx, m_ny); break;
+        case 1: nElect = doDecompressImage<electronSetterDelta<0> >(myBitStreamer, p, m_nx, m_ny); break;
+        case 2: nElect = doDecompressImage<electronSetterDelta<1> >(myBitStreamer, p, m_nx, m_ny); break;
+        case 4: nElect = doDecompressImage<electronSetterDelta<2> >(myBitStreamer, p, m_nx, m_ny); break;
         default: 
             std::cerr<<"Super sampling factor must be 1, 2, 4, -2, -4, -8, -16, or -32!"<<std::endl;
             throw std::range_error("Super sampling factor must be 1, 2, 4, -2, -4, -8, -16, or -32!");
     }
-    nElectronsCounted += nElect;
+    m_nElectronsCounted += nElect;
 	finalizeFrameRead(myBitStreamer);
 }
 
@@ -291,24 +291,24 @@ void ElectronCountedFramesDecompressor::decompressImage_AddTo(uint8_t* p, int su
     unsigned nElect = 0;
     switch(superFactor)
     {
-        case -32: nElect = doDecompressImage<electronAdderDelta<-5> >(myBitStreamer, p, nx, ny); break;
-        case -16: nElect = doDecompressImage<electronAdderDelta<-4> >(myBitStreamer, p, nx, ny); break;
-        case -8: nElect = doDecompressImage<electronAdderDelta<-3> >(myBitStreamer, p, nx, ny); break;
-        case -4: nElect = doDecompressImage<electronAdderDelta<-2> >(myBitStreamer, p, nx, ny); break;
-        case -2: nElect = doDecompressImage<electronAdderDelta<-1> >(myBitStreamer, p, nx, ny); break;
-        case 1: nElect = doDecompressImage<electronAdderDelta<0> >(myBitStreamer, p, nx, ny); break;
-        case 2: nElect = doDecompressImage<electronAdderDelta<1> >(myBitStreamer, p, nx, ny); break;
-        case 4: nElect = doDecompressImage<electronAdderDelta<2> >(myBitStreamer, p, nx, ny); break;
+        case -32: nElect = doDecompressImage<electronAdderDelta<-5> >(myBitStreamer, p, m_nx, m_ny); break;
+        case -16: nElect = doDecompressImage<electronAdderDelta<-4> >(myBitStreamer, p, m_nx, m_ny); break;
+        case -8: nElect = doDecompressImage<electronAdderDelta<-3> >(myBitStreamer, p, m_nx, m_ny); break;
+        case -4: nElect = doDecompressImage<electronAdderDelta<-2> >(myBitStreamer, p, m_nx, m_ny); break;
+        case -2: nElect = doDecompressImage<electronAdderDelta<-1> >(myBitStreamer, p, m_nx, m_ny); break;
+        case 1: nElect = doDecompressImage<electronAdderDelta<0> >(myBitStreamer, p, m_nx, m_ny); break;
+        case 2: nElect = doDecompressImage<electronAdderDelta<1> >(myBitStreamer, p, m_nx, m_ny); break;
+        case 4: nElect = doDecompressImage<electronAdderDelta<2> >(myBitStreamer, p, m_nx, m_ny); break;
         default: throw std::range_error("Super sampling factor must be 1, 2, 4, -2, -4, -8, -16, or -32!");
     }
-    nElectronsCounted += nElect;
+    m_nElectronsCounted += nElect;
 	finalizeFrameRead(myBitStreamer);	
 }
 
 
 void ElectronCountedFramesDecompressor::decompressImage(float* p, int superFactor, int frameNumber)
 {
-	std::memset(p, 0, nx*ny*superFactor*superFactor*sizeof(float)); //optionally make it possible to skip this if you _know_ it is already OK.
+	std::memset(p, 0, m_nx*m_ny*superFactor*superFactor*sizeof(float)); //optionally make it possible to skip this if you _know_ it is already OK.
     decompressImage_AddTo(p, superFactor, frameNumber);
 }
 
@@ -318,13 +318,13 @@ void ElectronCountedFramesDecompressor::decompressImage_AddTo(float* p, int supe
     unsigned nElect = 0;
     switch(superFactor)
     {
-        case 1: nElect = doDecompressImage<electronAdderBSpline<0> >(myBitStreamer, p, nx, ny); break;
-        case 2: nElect = doDecompressImage<electronAdderBSpline<1> >(myBitStreamer, p, nx, ny); break;
-        case 4: nElect = doDecompressImage<electronAdderBSpline<2> >(myBitStreamer, p, nx, ny); break;
+        case 1: nElect = doDecompressImage<electronAdderBSpline<0> >(myBitStreamer, p, m_nx, m_ny); break;
+        case 2: nElect = doDecompressImage<electronAdderBSpline<1> >(myBitStreamer, p, m_nx, m_ny); break;
+        case 4: nElect = doDecompressImage<electronAdderBSpline<2> >(myBitStreamer, p, m_nx, m_ny); break;
         default: throw std::range_error("Super sampling factor must be 1, 2, or 4 in B-Spline mode!");
     }
     // default: throw std::range_error("Super sampling factor must be 0 (BSpline), 1, 2, or 4!");
-    nElectronsCounted += nElect;
+    m_nElectronsCounted += nElect;
     finalizeFrameRead(myBitStreamer);
 }
 
@@ -344,38 +344,38 @@ void ElectronCountedFramesDecompressor::decompressImage_AddTo(float* p, int supe
 unsigned ElectronCountedFramesDecompressor::nElectronFractionUpperLimit(int frameStart, int frameStop)
 {
     size_t fractionSize = 0;
-    if (tiffMode)
+    if (m_tiffMode)
     {
         for (int i=frameStart; i<frameStop;++i)
-            fractionSize += frameBuffers[i].size();
+            fractionSize += m_frameBuffers[i].size();
     }
     else
     {
-        fractionSize = frameStartPointers[frameStop] - frameStartPointers[frameStart];
+        fractionSize = m_frameStartPointers[frameStop] - m_frameStartPointers[frameStart];
     }
-    unsigned nElectUpperLimit = (fractionSize * 8 + nBitsPerCode - 1) / nBitsPerCode;
+    unsigned nElectUpperLimit = (fractionSize * 8 + g_nBitsPerCode - 1) / g_nBitsPerCode;
     return nElectUpperLimit;
 }
 
 unsigned ElectronCountedFramesDecompressor::decompressCoordinateList(ElectronPos* pList, int frameNumber)
 {
-      static const int maxVal = ((1<<nBitsRLE)-1);
+      static const int maxVal = ((1<<g_nBitsRLE)-1);
 
-    frameNumber = frameNumber % nFrames; // nice for testing;
+    frameNumber = frameNumber % m_nFrames; // nice for testing;
     BitStreamer myBitStreamer = prepareFrameRead(frameNumber);
     unsigned nElect = 0;
-    int N = (int)(nx*ny);
+    int N = (int)(m_nx*m_ny);
 
-    int symbol = (int)myBitStreamer.getBits(nBitsPerCode);
+    int symbol = (int)myBitStreamer.getBits(g_nBitsPerCode);
     int value = symbol & maxVal;
     int outCount = value;
     while (outCount<N)
     {
         if (value < maxVal)
         {
-            int subPix = symbol >> nBitsRLE;
-            pList->x = (((outCount & 4095) << nSubPixBits) | ((subPix & 3) ^ 2));
-            pList->y = (((outCount >> 12) << nSubPixBits) | ((subPix >> 2) ^ 2));
+            int subPix = symbol >> g_nBitsRLE;
+            pList->x = (((outCount & 4095) << g_nSubPixBits) | ((subPix & 3) ^ 2));
+            pList->y = (((outCount >> 12) << g_nSubPixBits) | ((subPix >> 2) ^ 2));
             ++pList;
             ++outCount;
             ++nElect;
@@ -384,11 +384,11 @@ unsigned ElectronCountedFramesDecompressor::decompressCoordinateList(ElectronPos
 			TSThist[((subPix & 3)^2)+((subPix >> 2)^2)*4]++;
 #endif  
         }
-        else  if (no_bit_waste_on_overflow_code)
+        else  if (g_no_bit_waste_on_overflow_code)
         {
-            myBitStreamer.rewind(2*nSubPixBits); // only for no-waste EER RLE implementation.
+            myBitStreamer.rewind(2*g_nSubPixBits); // only for no-waste EER RLE implementation.
         }
-        symbol = (int)myBitStreamer.getBits(nBitsPerCode);
+        symbol = (int)myBitStreamer.getBits(g_nBitsPerCode);
         value = symbol & maxVal;
         outCount += value;
     }
@@ -400,7 +400,7 @@ unsigned ElectronCountedFramesDecompressor::decompressCoordinateList(ElectronPos
         std::cerr << "Warning " << oss.str() << std::endl;
     }
     //std::cout << " nDecodedTST "<<nDecodedTST<<", nOvflTST "<<nOvflTST<<std::endl;
-    nElectronsCounted += nElect;
+    m_nElectronsCounted += nElect;
     finalizeFrameRead(myBitStreamer);	
     return nElect;
 }
@@ -434,64 +434,64 @@ void ElectronCountedFramesDecompressor::prepareRead()
     unsigned firstFramePtr;
     // read in string and check
     char headerId[headerPrefixLen];    
-    if (tiffMode)
+    if (m_tiffMode)
     {
-        nx = 4096;
-        ny = 4096;
+        m_nx = 4096;
+        m_ny = 4096;
         
         //iterate through all frames to count them
         
-        nFrames = 0;
-        fsizeBytes = 0;
-        while (auto frame = eerFile->GetNextEerFrame())
+        m_nFrames = 0;
+        m_fsizeBytes = 0;
+        while (auto frame = m_eerFile->GetNextEerFrame())
         {
-            nFrames++;
-            frameBuffers.push_back(frame->GetEerData());
-            fsizeBytes += frameBuffers.back().size();
+            m_nFrames++;
+            m_frameBuffers.push_back(frame->GetEerData());
+            m_fsizeBytes += m_frameBuffers.back().size();
         }
-        std::cout << "ElectronCountedFramesDecompressor::prepareRead: found "<<nFrames<<" frames in EER-TIFF file." << std::endl;
+        std::cout << "ElectronCountedFramesDecompressor::prepareRead: found "<<m_nFrames<<" frames in EER-TIFF file." << std::endl;
 
     }
     else
     {
         // get file size
-        fh.seekg(0, std::ios::end);      // Place the file pointer at the end of file
-        fsizeBytes = fh.tellg();
-        fh.seekg(0);
+        m_fh.seekg(0, std::ios::end);      // Place the file pointer at the end of file
+        m_fsizeBytes = m_fh.tellg();
+        m_fh.seekg(0);
 
         //raw file without a header.
         //std::cout<<"No FCD header found. Assuming it is a raw dumped compressed file ... \n"<<std::endl;
         // NOTE: this is the normal use case; headers are never written out in the current proto
-        nx = 4096;
-        ny = 4096;
-        nFrames = 1;
+        m_nx = 4096;
+        m_ny = 4096;
+        m_nFrames = 1;
 
-        uint64_t streamSize = (fsizeBytes+sizeof(BitStreamWordType)-1) / sizeof(BitStreamWordType);
-        globalBuffer.resize(streamSize);
+        uint64_t streamSize = (m_fsizeBytes+sizeof(BitStreamWordType)-1) / sizeof(BitStreamWordType);
+        m_globalBuffer.resize(streamSize);
         //std::cout<<"ssize..."<<streamSize<<std::endl;
-        fh.seekg(0);
-        fh.read((char*)(globalBuffer.data()), streamSize*sizeof(BitStreamWordType));
+        m_fh.seekg(0);
+        m_fh.read((char*)(m_globalBuffer.data()), streamSize*sizeof(BitStreamWordType));
         createIndex();
     }
-	_frameCounter = 0;
+	m_frameCounter = 0;
 }
 
 BitStreamer ElectronCountedFramesDecompressor::prepareFrameRead(int frameNumber)
 {
     if (frameNumber >= 0)
 	{
-		_frameCounter = frameNumber;
+		m_frameCounter = frameNumber;
 	}
 	//std::cout<<"ElectronCountedFramesDecompressor::prepareFrameRead : frame "<<_frameCounter<<", size "<<frameBuffers[_frameCounter].size() << std::endl;
-    if (tiffMode)
+    if (m_tiffMode)
     {
-        return BitStreamer(reinterpret_cast<BitStreamWordType*>(frameBuffers[_frameCounter].data()));
+        return BitStreamer(reinterpret_cast<BitStreamWordType*>(m_frameBuffers[m_frameCounter].data()));
     }
     else
     {
-        uint64_t wordPos = frameStartPointers[_frameCounter] / sizeof(BitStreamWordType);
+        uint64_t wordPos = m_frameStartPointers[m_frameCounter] / sizeof(BitStreamWordType);
         //std::cout<<"prepareFramRead headerless: starting from bufPos "<<wordPos<<" to read frame " <<_frameCounter<<std::endl;
-        return BitStreamer(globalBuffer.data() + wordPos);
+        return BitStreamer(m_globalBuffer.data() + wordPos);
     }
 }
 
@@ -500,38 +500,38 @@ void ElectronCountedFramesDecompressor::finalizeFrameRead(BitStreamer& myBitStre
     int nwr = myBitStreamer.nWordsRead();
     //uint64_t nWordsShouldBe = myBitStreamer.buffer[nwr];
     //std::cout<<" nwordsRead in bytes "<<nwr*8<<std::endl;
-    _frameCounter++;
+    m_frameCounter++;
 }
 
 void ElectronCountedFramesDecompressor::createIndex()
 {
     std::vector<int64_t> frameSizesReversed;
-    int64_t reverseCount = globalBuffer.size();
+    int64_t reverseCount = m_globalBuffer.size();
     int nFramesOK = 0;
     int nFramesErr = 0;
     const int footerWords = HWfooterLength / sizeof(BitStreamWordType);
     while (reverseCount>0)
     {
-        footerCheckResult r = CheckFooter(globalBuffer.data() + reverseCount - footerWords);
+        footerCheckResult r = CheckFooter(m_globalBuffer.data() + reverseCount - footerWords);
         if (r != footerInvalid)
         {
             if (r == footerOK) nFramesOK++;
             else if (r == footerError) nFramesErr++;
-            int64_t frameSize = globalBuffer[reverseCount - footerWords - 1] + footerWords + 1;
+            int64_t frameSize = m_globalBuffer[reverseCount - footerWords - 1] + footerWords + 1;
             frameSizesReversed.push_back(frameSize);
             reverseCount -= frameSize;
         }
         else
             throw std::range_error("ElectronCountedFramesDecompressor::createIndex: Found incorrect footer string!");
     }
-    nFrames = frameSizesReversed.size();
-    frameStartPointers.resize(nFrames+1);
-    frameStartPointers[0] = 0;
+    m_nFrames = frameSizesReversed.size();
+    m_frameStartPointers.resize(m_nFrames+1);
+    m_frameStartPointers[0] = 0;
     uint64_t ptr = 0;
-    for (int i=1; i<=nFrames; ++i)
+    for (int i=1; i<=m_nFrames; ++i)
     {
         ptr += frameSizesReversed[frameSizesReversed.size()-i] * sizeof(BitStreamWordType);
-        frameStartPointers[i] = ptr;
+        m_frameStartPointers[i] = ptr;
     }
-    std::cout << "ElectronCountedFramesDecompressor::createIndex: found "<<nFrames<<" frames; #OK = "<<nFramesOK<<", #Error = "<<nFramesErr << std::endl;
+    std::cout << "ElectronCountedFramesDecompressor::createIndex: found "<<m_nFrames<<" frames; #OK = "<<nFramesOK<<", #Error = "<<nFramesErr << std::endl;
 }
