@@ -8,20 +8,7 @@
 #include "FeiBitStreamer.h"
 #include "EerFile.h"
 
-
-const unsigned g_nBitsRLE = 7; // 8 for old prototype EER files
-const unsigned g_nSubPixBits = 2;
 const bool g_no_bit_waste_on_overflow_code = true; // false for old prototype EER files.
-
-const unsigned g_nBitsPerCode = g_nBitsRLE + 2*g_nSubPixBits;
-
-
-const unsigned g_cameraSize = 4096; // NOTE: ONLY SQUARE NOW! and only FACLON
-const unsigned g_superResolutionFactor = (1<<g_nSubPixBits); // constant now since it is hard coded in the FPGA compressor anyway
-
-const unsigned g_totalSuperResolutionImSize = g_superResolutionFactor * g_cameraSize;
-
-const unsigned g_gainImageSize = 4096;
 
 struct ElectronPos
 {
@@ -31,6 +18,24 @@ struct ElectronPos
     ElectronPos(uint16_t x, uint16_t y) : x(x), y(y) {}
 };
 
+struct EerFrameSettings
+{
+    uint32_t width;
+    uint32_t lenght;
+
+    uint16_t rleBits;
+    uint16_t horzSubBits;
+    uint16_t vertSubBits;
+
+    uint16_t bitsPerCode;
+    uint16_t vertSubBitsOffset;
+    uint16_t widthBitsOffset;
+
+    explicit EerFrameSettings(const Fei::Acquisition::EerReader::EerFrame* eerFrame);
+
+    // use for ECC mode
+    EerFrameSettings();
+};
 
 class ElectronCountedFramesDecompressor
 {
@@ -83,7 +88,8 @@ private:
 
     int m_frameCounter;
 
-	unsigned m_nx, m_ny, m_nFrames;
+    EerFrameSettings m_eerFrameSettings;
+    unsigned m_nFrames;
     size_t m_fsizeBytes;
     unsigned m_nElectronsCounted;
 
