@@ -33,7 +33,7 @@ public:
 		{
 			// take a new one.
 			curValue = *(++ptr);
-			unsigned xtraBitsToRead = NBits - bitCounter; //# Remaining bits.
+			auto xtraBitsToRead = NBits - bitCounter; //# Remaining bits.
 			r |= ((curValue & ((1<<xtraBitsToRead)-1)) << (bitCounter));
 			curValue >>= xtraBitsToRead;
 			bitCounter = BitStreamWordTypeNBits - xtraBitsToRead;
@@ -100,7 +100,7 @@ public:
         else
         {
             // wordPos+1 most sign.bits still fit in. put them in, update NBits, and go to next word position.
-            unsigned NBitsStillFit = BitStreamWordTypeNBits - wordPos;
+            auto NBitsStillFit = BitStreamWordTypeNBits - wordPos;
             (*ptr) |= static_cast<BitStreamWordType>((v & ((1<<NBitsStillFit)-1))) << wordPos;
             v >>= NBitsStillFit;
             // go to next pos;
