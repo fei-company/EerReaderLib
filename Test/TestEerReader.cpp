@@ -83,12 +83,12 @@ void SaveTiff(const std::wstring &filepath, uint32_t width, uint32_t height,
     std::vector<uint16_t> decompressedImage(bufferSize);
     std::vector<uint8_t> eerImage(bufferSize);
 
-    for (int eerFrame = 0 ; eerFrame < nrOfFrames ; eerFrame++)
+    for (unsigned int eerFrame = 0 ; eerFrame < nrOfFrames ; eerFrame++)
     {
         decompressor.decompressImage((eerImage.data()));
         uint16_t* out = decompressedImage.data(); 
         uint8_t *in = eerImage.data();
-        for (int i = 0; i < bufferSize; i++)
+        for (unsigned int i = 0; i < bufferSize; i++)
         {
             *out += static_cast<uint8_t>(*in);
             ++out;

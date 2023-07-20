@@ -156,14 +156,14 @@ inline void GetWeightsSpline3(T w, T weights[])
 static const unsigned splineSize = 4;
 static float BSplineLUT[4][4];
 
-static const float splineScaleFactor = 9.9867; // pi^2 ;-)
+static const float splineScaleFactor = 9.9867f; // pi^2 ;-)
 
 void createBSplineLUT()
 {
     float splineF[4];
     for (int i=0; i<4;++i)
     {
-        float w = ((float)(i))/4 + 0.125;
+        float w = static_cast<float>(((float)(i))/4 + 0.125);
         //std::cout<<" W "<<w<<std::endl;
         GetWeightsSpline3(w, splineF);
         for (int j=0; j<4; ++j)
@@ -183,14 +183,14 @@ struct electronAdderBSpline
     {
         unsigned widthIn = eerFrameSettings.width;
         unsigned widthOut = (widthIn << eerFrameSettings.horzSubBits) >> (eerFrameSettings.horzSubBits - upBits);
-        int posXS = ((posX - ((subX>>1)&1)) << upBits) + (subX >> (eerFrameSettings.horzSubBits-upBits));
-        int posYS = ((posY - ((subY>>1)&1)) << upBits) + (subY >> (eerFrameSettings.vertSubBits-upBits));
+        unsigned int posXS = ((posX - ((subX>>1)&1)) << upBits) + (subX >> (eerFrameSettings.horzSubBits-upBits));
+        unsigned int posYS = ((posY - ((subY>>1)&1)) << upBits) + (subY >> (eerFrameSettings.vertSubBits-upBits));
         
         subX = (subX << upBits) & 3; //repl MASK
         subY = (subY << upBits) & 3; //repl MASK
-        int yStart = (posYS>0)? 0 : 1; // repl other splines sizes now not taken care of...
-        int yStop = (posYS>widthOut-3)?  (widthOut+1-posYS): splineSize;
-        for (int y=yStart; y<yStop; ++y)
+        unsigned int yStart = (posYS>0)? 0 : 1; // repl other splines sizes now not taken care of...
+        unsigned int yStop = (posYS>widthOut-3)?  (widthOut+1-posYS): splineSize;
+        for (unsigned int y=yStart; y<yStop; ++y)
         {
             int xStart = (posXS>0)? 0 : 1; // repl other splines sizes now not taken care of...
             int xStop = (posXS>widthOut-3)?  (widthOut+1-posXS): splineSize;
@@ -400,7 +400,7 @@ unsigned ElectronCountedFramesDecompressor::nElectronFractionUpperLimit(int fram
     {
         fractionSize = m_frameStartPointers[frameStop] - m_frameStartPointers[frameStart];
     }
-    unsigned nElectUpperLimit = (fractionSize * 8 + m_eerFrameSettings.bitsPerCode - 1) / m_eerFrameSettings.bitsPerCode;
+    unsigned nElectUpperLimit = static_cast<unsigned>((fractionSize * 8 + m_eerFrameSettings.bitsPerCode - 1) / m_eerFrameSettings.bitsPerCode);
     return nElectUpperLimit;
 }
 
@@ -416,7 +416,7 @@ unsigned ElectronCountedFramesDecompressor::decompressCoordinateList(ElectronPos
     int N = (int)(m_eerFrameSettings.width*m_eerFrameSettings.lenght);
 
     int symbol = (int)myBitStreamer.getBits(nBitsPerCode);
-    int value = symbol & maxVal;
+    auto value = symbol & maxVal;
     int outCount = value;
     while (outCount<N)
     {
@@ -479,10 +479,7 @@ ElectronCountedFramesDecompressor::~ElectronCountedFramesDecompressor()
 
 void ElectronCountedFramesDecompressor::prepareRead()
 {
-    unsigned short compressionMode, submode;
-    unsigned firstFramePtr;
     // read in string and check
-    char headerId[headerPrefixLen];    
     if (m_tiffMode)
     {
         //iterate through all frames to count them
@@ -545,7 +542,7 @@ BitStreamer ElectronCountedFramesDecompressor::prepareFrameRead(int frameNumber)
 
 void ElectronCountedFramesDecompressor::finalizeFrameRead(BitStreamer& myBitStreamer)
 {
-    int nwr = myBitStreamer.nWordsRead();
+    auto nwr = myBitStreamer.nWordsRead();
     //uint64_t nWordsShouldBe = myBitStreamer.buffer[nwr];
     //std::cout<<" nwordsRead in bytes "<<nwr*8<<std::endl;
     m_frameCounter++;
@@ -572,11 +569,11 @@ void ElectronCountedFramesDecompressor::createIndex()
         else
             throw std::range_error("ElectronCountedFramesDecompressor::createIndex: Found incorrect footer string!");
     }
-    m_nFrames = frameSizesReversed.size();
+    m_nFrames = static_cast<unsigned>(frameSizesReversed.size());
     m_frameStartPointers.resize(m_nFrames+1);
     m_frameStartPointers[0] = 0;
     uint64_t ptr = 0;
-    for (int i=1; i<=m_nFrames; ++i)
+    for (unsigned int i=1; i<=m_nFrames; ++i)
     {
         ptr += frameSizesReversed[frameSizesReversed.size()-i] * sizeof(BitStreamWordType);
         m_frameStartPointers[i] = ptr;

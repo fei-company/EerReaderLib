@@ -202,7 +202,9 @@ unsigned DefectElectronAdder::execute(ElectronPos* pListPtr, unsigned nElect, co
             {
                 defectCounts[eOfs + k*defOfs] += pcGain * ((float)((defDist-k+1)))/(mult*(defDist+1)); // unordered_map creates zero-initialized element on-the-fly if not there yet. so convenient, yet confusing
             }
-            if ((di & bitMask_DefectNeighborTypeMask) == bitMask_DefectCorner && eOfs >= defOfs && eOfs < 4096*4096+defOfs)
+            if ((di & bitMask_DefectNeighborTypeMask) == bitMask_DefectCorner &&
+                eOfs >= static_cast<uint32_t>(defOfs) &&
+                eOfs < 4096 * 4096 + static_cast<uint32_t>(defOfs))
             {
                 defectNeighborInfo_t diOrt = camDefectNeighborInfo.neighborSpec[eOfs - defOfs];
                 // get the info of the horizontal defect. (by construction in CreateDefectNeighborInfoImage, the corner points now have the vertical one)
