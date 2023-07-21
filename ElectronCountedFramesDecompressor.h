@@ -28,7 +28,7 @@ struct EerFrameSettings
     uint16_t vertSubBits;
 
     uint16_t bitsPerCode;
-    uint16_t vertSubBitsOffset;
+    uint16_t horizontalSubBitsOffset;
     uint16_t widthBitsOffset;
 
     explicit EerFrameSettings(const Fei::Acquisition::EerReader::EerFrame* eerFrame);
