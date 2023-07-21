@@ -58,3 +58,5 @@ link_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/lib # Default library directory
     ${LIBTIFF_LIB_DIR} # Library directory for libtiff
 )
+
+add_subdirectory(Test)
