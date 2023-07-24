@@ -27,7 +27,7 @@ void reduce16k_to_4k(const float *gain16k,float *gain4k)
                 {
                     r += gain16k[(y*4+sy)*16384 + (x*4+sx)];
                 }
-            gain4k[y*4096+x] = r;
+            gain4k[y*4096+x] = static_cast<float>(r);
         }
     std::ofstream ofile("TST4Kred.bin", std::ios::binary);
 	ofile.write((char*)(gain4k), sizeof(float)*4096*4096);
@@ -38,9 +38,9 @@ CameraDefects PrepareGainImage_ExtractDefects(float* gainImageFull, unsigned gai
 {
     std::cerr<<"PrepareGainImage_ExtractDefects "<<gainImSize<<"; "<<w<<"--"<<h<<", #PIX "<<std::endl;
 
-    static const float defectPixThreshold = 0.9;
-    static const float defectPixVisitedMark = -2.0;
-    static const float defectPixVisitedThresh = -1.0; //must be > defectPixVisitedMark and <0 to do a safe float comparison
+    static const float defectPixThreshold = 0.9f;
+    static const float defectPixVisitedMark = -2.0f;
+    static const float defectPixVisitedThresh = -1.0f; //must be > defectPixVisitedMark and <0 to do a safe float comparison
 
     int scaleFactor = 1;
     float* gainImage = gainImageFull;
@@ -80,7 +80,7 @@ CameraDefects PrepareGainImage_ExtractDefects(float* gainImageFull, unsigned gai
 	double nRemovedPixels = 0;
 
 	// extract dead pixels and create the gain image.
-	float deadThrAbs = deadThreshold * mean;
+	auto deadThrAbs = deadThreshold * mean;
 	gptr = gainImage;
 	for (unsigned y = 0; y < h; ++y)
 	{
@@ -160,7 +160,7 @@ CameraDefects PrepareGainImage_ExtractDefects(float* gainImageFull, unsigned gai
 		for (unsigned x = 0; x < gainImSize; ++x, ++gptr)
 		{
 			if ((*gptr)>0)
-				*gptr = p / (*gptr);
+				*gptr = static_cast<float>(p) / (*gptr);
 		}
 	}
 
@@ -178,12 +178,12 @@ CameraDefects PrepareGainImage_ExtractDefects(float* gainImageFull, unsigned gai
 
     // finally, make all defects have gain 1.0
 	for (auto it = r.vLineDefects.begin(); it != r.vLineDefects.end(); ++it)
-		for (int y = 0; y<gainImSize; ++y)
+		for (unsigned int y = 0; y<gainImSize; ++y)
 			for (int x = scaleFactor*(it->begin); x<scaleFactor*((it->end)+1); ++x)
 				gainImageFull[y*gainImSize + x] = 1.0;
 	for (auto it = r.hLineDefects.begin(); it != r.hLineDefects.end(); ++it)
 		for (int y = scaleFactor*(it->begin); y<scaleFactor*((it->end)+1); ++y)
-			for (int x = 0; x<gainImSize; ++x)
+			for (unsigned int x = 0; x<gainImSize; ++x)
 					gainImageFull[y*gainImSize + x] = 1.0;
 	for (auto it = r.pixelDefects.begin(); it != r.pixelDefects.end(); ++it)
 		for (int i=0; i<scaleFactor;++i)
@@ -203,17 +203,17 @@ void DefectCorrect(T* img, const CameraDefects& def, unsigned w , unsigned h ) /
 {
 	for (auto it = def.vLineDefects.begin(); it != def.vLineDefects.end(); ++it)
 	{
-		int xStart = it->begin;
-		int xStop = it->end;
+		auto xStart = it->begin;
+		auto xStop = it->end;
 
-		for (int y = 0; y<h; ++y)
+		for (unsigned int y = 0; y<h; ++y)
 		{
 			T pixLeft = img[y*h + ((xStart>0) ? xStart - 1 : xStop + 1)];
 			T pixRight = img[y*h + ((xStop<(w - 1)) ? xStop + 1 : xStart - 1)];
 			for (int x = xStart; x <= xStop; ++x)
 			{
 				double coef = static_cast<double>(x - xStart + 1) / (xStop - xStart + 2);
-				img[y*w + x] = pixLeft * (1 - coef) + pixRight * coef;
+				img[y*w + x] = static_cast<uint8_t>(pixLeft * (1 - coef) + pixRight * coef);
 			}
 		}
 	}
@@ -222,28 +222,28 @@ void DefectCorrect(T* img, const CameraDefects& def, unsigned w , unsigned h ) /
 		int yStart = it->begin;
 		int yStop = it->end;
 
-		for (int x = 0; x<w; ++x)
+		for (unsigned int x = 0; x<w; ++x)
 		{
 			T pixLeft = img[x + ((yStart>0) ? yStart - 1 : yStop + 1) * 4096];
 			T pixRight = img[x + ((yStop<4095) ? yStop + 1 : yStart - 1) * 4096];
 			for (int y = yStart; y <= yStop; ++y)
 			{
 				double coef = (y - yStart + 1) / (yStop - yStart + 2);
-				img[y*w + x] = pixLeft * (1 - coef) + pixRight * coef;
+				img[y*w + x] = static_cast<uint8_t>(pixLeft * (1 - coef) + pixRight * coef);
 			}
 		}
 	}
 	for (auto it = def.pixelDefects.begin(); it != def.pixelDefects.end(); ++it)
 	{
-		int x = it->x;
-		int y = it->y;
+		auto x = it->x;
+		auto y = it->y;
 		double sum = 0;
         int n = 4;
         if (y > 0) sum += img[(y-1)*w + x]; else --n;
         if (x > 0) sum += img[y*w + x - 1]; else --n;
         if (x < w-1) sum += img[y*w + x + 1]; else --n;
         if (y < h-1) sum += img[(y+1)*w + x]; else --n;
-		img[y*w + x] = sum / n;
+        img[y*w + x] = static_cast<uint8_t>(sum / n);
 	}
 	for (auto it = def.areaDefects.begin(); it != def.areaDefects.end(); ++it)
 	{
@@ -258,7 +258,7 @@ void DefectCorrect(T* img, const CameraDefects& def, unsigned w , unsigned h ) /
             {
                 double coefX = static_cast<double>(x - it->beginX + 1) / nx;
                 double coefY = static_cast<double>(y - it->beginY + 1) / ny;
-				img[y*w + x] = (img[yBef*w + x] * (0.5 - coefY) + img[yAft*w + x] * coefY + img[y*w + xBef] * (0.5 - coefX) + img[y*w + xAft] * coefX);
+				img[y*w + x] = static_cast<uint8_t>((img[yBef*w + x] * (0.5 - coefY) + img[yAft*w + x] * coefY + img[y*w + xBef] * (0.5 - coefX) + img[y*w + xAft] * coefX));
             }
 	}
 

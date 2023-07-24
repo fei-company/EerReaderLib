@@ -21,8 +21,15 @@ const defectNeighborInfo_t bitMask_DefectUp = bitMask_DefectBack | bitMask_Defec
 const defectNeighborInfo_t bitMask_Distance = 0x0F;
 
 
+const unsigned nSubPixBits = 2;
 
-const unsigned gainImageSizeFactor = totalSuperResolutionImSize/gainImageSize; // constant now since it is hard coded in the FPGA compressor anyway
+const unsigned cameraSize = 4096; // NOTE: ONLY SQUARE NOW! and only FACLON
+const unsigned superResolutionFactor = (1 << nSubPixBits); // constant now since it is hard coded in the FPGA compressor anyway
+
+const unsigned totalSuperResolutionImSize = superResolutionFactor * cameraSize;
+
+const unsigned gainImageSize = 4096;
+const unsigned gainImageSizeFactor = totalSuperResolutionImSize / gainImageSize; // constant now since it is hard coded in the FPGA compressor anyway
 
 
 
@@ -195,7 +202,9 @@ unsigned DefectElectronAdder::execute(ElectronPos* pListPtr, unsigned nElect, co
             {
                 defectCounts[eOfs + k*defOfs] += pcGain * ((float)((defDist-k+1)))/(mult*(defDist+1)); // unordered_map creates zero-initialized element on-the-fly if not there yet. so convenient, yet confusing
             }
-            if ((di & bitMask_DefectNeighborTypeMask) == bitMask_DefectCorner && eOfs >= defOfs && eOfs < 4096*4096+defOfs)
+            if ((di & bitMask_DefectNeighborTypeMask) == bitMask_DefectCorner &&
+                eOfs >= static_cast<uint32_t>(defOfs) &&
+                eOfs < 4096 * 4096 + static_cast<uint32_t>(defOfs))
             {
                 defectNeighborInfo_t diOrt = camDefectNeighborInfo.neighborSpec[eOfs - defOfs];
                 // get the info of the horizontal defect. (by construction in CreateDefectNeighborInfoImage, the corner points now have the vertical one)
