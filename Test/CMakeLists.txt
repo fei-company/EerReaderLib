@@ -1,10 +1,12 @@
 project(TestEerReader)
 
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+if(WIN32)
+    set (PROJECT_LINK_LIBS EERReaderLib.lib libtiff_static.lib)
+else()
+    set (PROJECT_LINK_LIBS libEERReaderLib.a libtiff.a)
+endif()
 
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../build/lib ${LIBTIFF_LIB_DIR})
-set (PROJECT_LINK_LIBS EERReaderLib.lib libtiff_static.lib)
-include_directories(${LIBTIFF_INCLUDE_DIR}) 
+include_directories(${LIBTIFF_INCLUDE_DIR})
 
 # Target definition
 add_executable(TestEerReader TestEerReader.cpp)
