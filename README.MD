@@ -1,3 +1,6 @@
+## aseedb fork
+introduces the possibility to compile under linux and macOS in addition to windows.
+
 Eer File Format
 ===============
 
