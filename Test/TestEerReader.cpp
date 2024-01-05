@@ -13,6 +13,7 @@ void SetTag(std::shared_ptr<TIFF> tiffFile, uint32_t tag, T value)
     TIFFSetField(tiffFile.get(), tag, value);
 }
 
+#ifdef _WIN32
 std::shared_ptr<TIFF> OpenFile(const std::wstring &filepath) {
     auto tiffFile = TIFFOpenW(filepath.c_str(), "w");
     if (tiffFile == nullptr) {
@@ -20,7 +21,17 @@ std::shared_ptr<TIFF> OpenFile(const std::wstring &filepath) {
     }
     return std::shared_ptr<TIFF>(tiffFile, [](TIFF *f) { TIFFClose(f); });
 }
+#else
+std::shared_ptr<TIFF> OpenFile(const std::string &filepath) {
+    auto tiffFile = TIFFOpen(filepath.c_str(), "w");
+    if (tiffFile == nullptr) {
+        throw std::runtime_error("Could not write file");
+    }
+    return std::shared_ptr<TIFF>(tiffFile, [](TIFF *f) { TIFFClose(f); });
+}
+#endif
 
+#ifdef _WIN32
 void SaveTiff(const std::wstring &filepath, uint32_t width, uint32_t height,
     std::vector<uint8_t> decompressedImage) {
     auto tiffFile = OpenFile(filepath);
@@ -45,22 +56,56 @@ void SaveTiff(const std::wstring &filepath, uint32_t width, uint32_t height,
     // http://www.libtiff.org/man/TIFFWriteDirectory.3t.html
     TIFFWriteDirectory(tiffFile.get());
 }
+#else
+void SaveTiff(const std::string &filepath, uint32_t width, uint32_t height,
+    std::vector<uint8_t> decompressedImage) {
+    auto tiffFile = OpenFile(filepath);
 
+    SetTag<uint32_t>(tiffFile, TIFFTAG_IMAGEWIDTH, width);
+    SetTag<uint32_t>(tiffFile, TIFFTAG_IMAGELENGTH, height);
+    SetTag<uint32_t>(tiffFile, TIFFTAG_ROWSPERSTRIP, height);
+    SetTag<uint16_t>(tiffFile, TIFFTAG_BITSPERSAMPLE, 8);
+    SetTag<uint16_t>(tiffFile, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
+
+    SetTag<uint16_t>(tiffFile, TIFFTAG_SAMPLESPERPIXEL, 1);
+    SetTag<float>(tiffFile, TIFFTAG_XRESOLUTION, 1);
+    SetTag<float>(tiffFile, TIFFTAG_YRESOLUTION, 1);
+    SetTag<uint16_t>(tiffFile, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
+
+    auto bufferSize = width * height;
+    TIFFWriteEncodedStrip(tiffFile.get(), 0, reinterpret_cast<void *>(decompressedImage.data()),
+        bufferSize);
+
+    TIFFWriteDirectory(tiffFile.get());
+}
+#endif
 
 int main(int argc, char* argv[]) {
     std::string inputFile;
+    #ifdef _WIN32
     std::wstring outputFile;
+    #else
+    std::string outputFile;
+    #endif
     int upscaleFactor;
 
     if (argc == 4) {
         inputFile = argv[1];
+        #ifdef _WIN32
         outputFile = std::wstring(argv[2], argv[2] + strlen(argv[2]));
+        #else
+        outputFile = argv[2];
+        #endif
         upscaleFactor = std::stoi(argv[3]);
     }
     else if (argc == 3)
     {
         inputFile = argv[1];
+        #ifdef _WIN32
         outputFile = std::wstring(argv[2], argv[2] + strlen(argv[2]));
+        #else
+        outputFile = argv[2];
+        #endif
         upscaleFactor = 1;
     }
     else if (argc == 2 && (strcmp(argv[1], "--help") == 0 ||
@@ -99,7 +144,12 @@ int main(int argc, char* argv[]) {
     std::cout << "Number of electron hits: "
         << decompressor.getNElectronsCounted() << std::endl;
     std::cout << "Saving output as Tiff image ..." << std::endl;
+    #ifdef _WIN32
     SaveTiff(outputFile + L".Tiff", width, height, eerImage);
+    #else
+    std::string str(outputFile.begin(), outputFile.end());
+    SaveTiff(str + ".Tiff", width, height, eerImage);
+    #endif
 
     return EXIT_SUCCESS;
 }
